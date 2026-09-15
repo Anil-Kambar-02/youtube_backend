@@ -1,27 +1,35 @@
-// Import the Cloudinary library's v2 client
-import cloudinaryPackage from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 
-const { v2: cloudinary } = cloudinaryPackage;
-
-// Return "https" URLs by setting secure: true
-cloudinary.config({
-  secure: true,
-});
-
-// Log the configuration
-// console.log(cloudinary.config());
-
 const uploadOnCloudinary = async (localFilePath) => {
+  if (!localFilePath) return null;
+
   try {
-    if (!localFilePath) return null;
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true,
+    });
+
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
     });
-    console.log("File is uploaded on cloudinary", response.url);
+
+    // Remove the temporary file locally after successful upload
+    if (fs.existsSync(localFilePath)) {
+      await fs.promises.unlink(localFilePath);
+    }
+
     return response;
   } catch (error) {
-    fs.unlink(localFilePath); // remove the locally saved temproary file as the upload operation got failed
+    console.error("Cloudinary upload failed:", error.message);
+
+    // Ensure temporary file is safely cleaned up on failure
+    if (fs.existsSync(localFilePath)) {
+      await fs.promises.unlink(localFilePath).catch(() => {});
+    }
+
     return null;
   }
 };
