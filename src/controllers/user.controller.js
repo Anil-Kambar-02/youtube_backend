@@ -1,7 +1,10 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 
@@ -283,8 +286,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while uploading Avatar");
   }
 
+  const oldAvatarUrl = req.user.avatar;
   const user = await User.findByIdAndUpdate(
-    req.user.Id,
+    req.user._id,
     {
       $set: {
         avatar: avatar.url,
@@ -292,6 +296,8 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password");
+
+  await deleteFromCloudinary(oldAvatarUrl);
 
   return res
     .status(200)
@@ -308,9 +314,10 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
   if (!coverImage.url) {
-    throw new Error(400, "Error while uploading on Cover image");
+    throw new ApiError(400, "Error while uploading on Cover image");
   }
 
+  const oldCoverImageUrl = req.user.coverImage;
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {
@@ -318,6 +325,8 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password");
+
+  await deleteFromCloudinary(oldCoverImageUrl);
 
   return res
     .status(200)
