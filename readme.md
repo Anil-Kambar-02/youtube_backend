@@ -1,7 +1,3 @@
-# its about a youtube backend structure
-
-I learned this from chai aur backend series from Youtube
-
 # YouTube Backend
 
 This project is a backend implementation inspired by the concepts and development practices taught in the **Chai aur Backend** YouTube series.
